@@ -7,6 +7,7 @@
         type="text"
         placeholder="Логин"
         required
+        :disabled="isLoading"
       />
       <p v-if="errors.username" class="error">{{ errors.username }}</p>
 
@@ -15,6 +16,7 @@
         type="email"
         placeholder="Email"
         required
+        :disabled="isLoading"
       />
       <p v-if="errors.email" class="error">{{ errors.email }}</p>
 
@@ -23,6 +25,7 @@
         type="password"
         placeholder="Пароль"
         required
+        :disabled="isLoading"
       />
       <p v-if="errors.password" class="error">{{ errors.password }}</p>
 
@@ -31,10 +34,15 @@
         type="password"
         placeholder="Повторите пароль"
         required
+        :disabled="isLoading"
       />
       <p v-if="errors.confirmPassword" class="error">{{ errors.confirmPassword }}</p>
 
-      <button type="submit">Зарегистрироваться</button>
+      <p v-if="serverError" class="error">{{ serverError }}</p>
+
+      <button type="submit" :disabled="isLoading">
+        {{ isLoading ? 'Регистрация...' : 'Зарегистрироваться' }}
+      </button>
 
       <p class="auth-switch">
         Уже есть аккаунт?
@@ -63,12 +71,16 @@ const errors = reactive({
   confirmPassword: ''
 })
 
+const isLoading = ref(false)
+const serverError = ref('')
+
 // Валидация формы
 function validateForm() {
   let valid = true
 
   // Сбрасываем ошибки
   Object.keys(errors).forEach(key => errors[key] = '')
+  serverError.value = ''
 
   // Username: 3-20 символов
   if (form.username.length < 3 || form.username.length > 20) {
@@ -98,14 +110,23 @@ function validateForm() {
   return valid
 }
 
+// Отправка формы
 function submitForm() {
   if (!validateForm()) return
 
-  emit('submit', {
-    username: form.username,
-    email: form.email,
-    password: form.password
-  })
+  isLoading.value = true
+  
+  try {
+    emit('submit', {
+      username: form.username,
+      email: form.email,
+      password: form.password
+    })
+  } catch (error) {
+    serverError.value = error.message || 'Ошибка при регистрации'
+  } finally {
+    isLoading.value = false
+  }
 }
 </script>
 

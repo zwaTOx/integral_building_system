@@ -2,10 +2,24 @@
   <div class="auth-container">
     <h2>Вход</h2>
     <form class="auth-form" @submit.prevent="onSubmit">
-      <input v-model="email" type="text" placeholder="Почта" />
-      <input v-model="password" type="password" placeholder="Пароль" />
+      <input 
+        v-model="email" 
+        type="email" 
+        placeholder="Почта" 
+        required
+        :disabled="isLoading"
+      />
+      <input 
+        v-model="password" 
+        type="password" 
+        placeholder="Пароль" 
+        required
+        :disabled="isLoading"
+      />
       <p v-if="error" class="error">{{ error }}</p>
-      <button type="submit">Войти</button>
+      <button type="submit" :disabled="isLoading">
+        {{ isLoading ? 'Вход...' : 'Войти' }}
+      </button>
       <router-link to="/register" class="register-link">
         Нет аккаунта? Зарегистрироваться
       </router-link>
@@ -15,32 +29,30 @@
 
 <script setup>
 import { ref } from 'vue'
-import api from '../services/api'
+import { login } from '../store/authStore'
 import { useRouter } from 'vue-router'
 
 const email = ref('')
 const password = ref('')
 const error = ref('')
+const isLoading = ref(false)
 
 const router = useRouter()
 
 async function onSubmit() {
   error.value = ''
+  isLoading.value = true
+  
   try {
-    const res = await api.post('/user/login/', {
-      email: email.value,
-      password: password.value
-    })
-
-    // Если сервер вернул ok === true, переходим в чат
-    if (res.data.ok) {
-      router.push('/chat')
-    } else {
-      error.value = 'Неверные данные для авторизации'
-    }
+    await login(email.value, password.value)
+    
+    // Успешный логин - переходим на главную страницу
+    router.push('/')
   } catch (e) {
     console.error(e)
-    error.value = 'Неверные данные для авторизации'
+    error.value = 'Неверный email или пароль'
+  } finally {
+    isLoading.value = false
   }
 }
 </script>

@@ -8,28 +8,35 @@
 import { useRouter } from 'vue-router'
 import RegisterForm from '../components/RegisterForm.vue'
 import '../assets/styles/auth.css'
-import api from '../services/api'
-import { ref, onMounted } from 'vue'
+import { register, checkAuth } from '../store/authStore'
+import { onMounted } from 'vue'
 
 const router = useRouter()
 
 async function handleRegister(data) {
   try {
-    const res = await api.post('/user/register/', data)
-
-    alert('Регистрация успешна! Авторизуйтесь.')
+    await register(data.username, data.email, data.password)
+    
+    // Показываем сообщение об успехе
+    alert('Регистрация успешна! Пожалуйста, войдите.')
+    
+    // Перенаправляем на страницу логина
     router.push('/login')
   } catch (err) {
-    alert(err)
+    // Ошибка уже обработана в authStore
+    console.error('Ошибка регистрации:', err)
   }
 }
 
+// Если пользователь уже авторизован, перенаправляем на главную страницу
 onMounted(async () => {
-  try{
-    const response = await api.get('/user/check/')
-    if (response.data.ok) router.push('/chat')
+  try {
+    const isAuth = await checkAuth()
+    if (isAuth) {
+      router.push('/')
+    }
   } catch (error) {
-    console.error("Вы не авторизированы!", error)
+    // Пользователь не авторизован, это нормально для страницы регистрации
   }
 })
 </script>
